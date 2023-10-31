@@ -64,33 +64,33 @@ Future<void> setupFlutterNotifications() async {
 void showFlutterNotification(RemoteMessage message) async {
   dynamic data = message.data;
   try {
-    developer.log('data here is ${message.sentTime.toString()}');
+    developer.log('data here is ${data.toString()}');
 
-    final http.Response response = await http.get(Uri.parse(data['Image']));
-    BigTextStyleInformation? bigTextStyleInformation = data['Body'] != null
-        ? BigTextStyleInformation(data['Body'],
-            htmlFormatContent: true,
-            htmlFormatTitle: true,
-            htmlFormatBigText: true,
-            htmlFormatContentTitle: true,
-            htmlFormatSummaryText: true)
-        : null;
-    final ByteArrayAndroidBitmap largeIcon =
-        ByteArrayAndroidBitmap(response.bodyBytes);
+    // final http.Response response = await http.get(Uri.parse(data['Image']));
+    // BigTextStyleInformation? bigTextStyleInformation = data['Body'] != null
+    //     ? BigTextStyleInformation(data['Body'],
+    //         htmlFormatContent: true,
+    //         htmlFormatTitle: true,
+    //         htmlFormatBigText: true,
+    //         htmlFormatContentTitle: true,
+    //         htmlFormatSummaryText: true)
+    //     : null;
+    // final ByteArrayAndroidBitmap largeIcon =
+    //     ByteArrayAndroidBitmap(response.bodyBytes);
     if (!kIsWeb) {
       flutterLocalNotificationsPlugin.show(
           message.sentTime?.millisecond ?? 0,
-          data['Title'],
-          data['Body'],
+          data['title'],
+          data['body'],
           NotificationDetails(
             android: AndroidNotificationDetails(channel.id, channel.name,
                 channelDescription: channel.description,
                 icon: '@mipmap/ic_launcher',
                 importance: Importance.max,
-                largeIcon: largeIcon,
-                styleInformation: bigTextStyleInformation),
-          ),
-          payload: data.toString());
+                // largeIcon: largeIcon,
+                // styleInformation: bigTextStyleInformation
+            ),
+          ) );
     }
   } catch (e) {
     developer.log('error when dipslay noti $e');
@@ -100,6 +100,10 @@ void showFlutterNotification(RemoteMessage message) async {
 class FirebaseMessagingService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
+  Future<void> initlize() async {
+    await Firebase.initializeApp(
+        name: 'IOT', options: DefaultFirebaseOptions.currentPlatform);
+  } 
   Future<String?> getToken() async {
     return await _fcm.getToken();
   }

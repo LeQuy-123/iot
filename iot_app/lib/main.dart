@@ -1,6 +1,23 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: avoid_developer.log
 
-void main() {
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:iot_app/firebase_messaging.dart';
+import 'package:iot_app/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+import 'dart:developer' as developer;
+final client = MqttServerClient('192.168.1.13', '');
+
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // ignore: unused_local_variable
+  String? token = await FirebaseMessagingService().configure();
+  await FirebaseMessagingService().subscribeToTopic('iot');
+
   runApp(const MyApp());
 }
 
@@ -13,21 +30,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -38,16 +40,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -56,17 +48,92 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  @override
+  void initState() {
+    initMQTT();
+    super.initState();
+  }
+
+  Future<void> initMQTT() async {
+    const pubTopic =
+        "master/client1/attribute/+/#";
+    final connMess = MqttConnectMessage()
+        .withClientIdentifier('client1')
+        .withWillTopic(
+            'willtopic') // If you set this you must set a will message
+        .withWillMessage('My Will message')
+        .startClean() // Non persistent session for testing
+        .withWillQos(MqttQos.atLeastOnce);
+    client.logging(on: false);
+    client.autoReconnect = true;
+    client.onAutoReconnect = onAutoReconnect;
+    client.setProtocolV311();
+
+    client.keepAlivePeriod = 20;
+
+    client.connectTimeoutPeriod = 20000; // milliseconds
+
+    client.onDisconnected = onDisconnected;
+
+    client.onConnected = onConnected;
+
+    client.onSubscribed = onSubscribed;
+    client.connectionMessage = connMess;
+    try {
+      await client.connect('master:quy', 'JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX');
+    } on NoConnectionException catch (e) {
+      // Raised by the client when connection fails.
+      developer.log('EXAMPLE::client exception - $e');
+      client.disconnect();
+    } on SocketException catch (e) {
+      // Raised by the socket layer
+      developer.log('EXAMPLE::socket exception - $e');
+      client.disconnect();
+    }
+    if (client.connectionStatus!.state == MqttConnectionState.connected) {
+      developer.log('EXAMPLE::Mosquitto client connected');
+    } else {
+      /// Use status here rather than state if you also want the broker return code.
+      developer.log(
+          'EXAMPLE::ERROR Mosquitto client connection failed - disconnecting, status is ${client.connectionStatus}');
+      client.disconnect();
+      exit(-1);
+    }
+    client.subscribe(pubTopic, MqttQos.exactlyOnce);
+    client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+      final recMess = c![0].payload as MqttPublishMessage;
+      final pt =
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+      /// The above may seem a little convoluted for users only interested in the
+      /// payload, some users however may be interested in the received publish message,
+      /// lets not constrain ourselves yet until the package has been in the wild
+      /// for a while.
+      /// The payload is a byte buffer, this will be specific to the topic
+      developer.log(
+          'EXAMPLE::Change notification:: topic is <${c[0].topic}>, payload is <-- $pt -->');
+      developer.log('');
+    });
+    client.published!.listen((MqttPublishMessage message) {
+      developer.log(
+          'EXAMPLE::Published notification:: topic is ${message.variableHeader!.topicName}, with Qos ${message.header!.qos}');
+    });
+  }
+
+  @override
+  void dispose() {
+    client.disconnect();
+    super.dispose();
+  }
 
   void _incrementCounter() {
     setState(() {
-      
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-  
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -90,7 +157,37 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), 
+      ),
     );
   }
+}
+
+/// The subscribed callback
+void onSubscribed(String topic) {
+  developer.log('EXAMPLE::Subscription confirmed for topic $topic');
+}
+
+/// The unsolicited disconnect callback
+void onDisconnected() {
+  developer
+      .log('EXAMPLE::OnDisconnected client callback - Client disconnection');
+  if (client.connectionStatus!.disconnectionOrigin ==
+      MqttDisconnectionOrigin.solicited) {
+    developer
+        .log('EXAMPLE::OnDisconnected callback is solicited, this is correct');
+  } else {
+    developer.log(
+        'EXAMPLE::OnDisconnected callback is unsolicited or none, this is incorrect - exiting');
+    exit(-1);
+  }
+}
+
+/// The successful connect callback
+void onConnected() {
+  developer.log(
+      'EXAMPLE::OnConnected client callback - Client connection was successful');
+}
+void onAutoReconnect() {
+  developer.log(
+      'EXAMPLE::onAutoReconnect client callback - Client auto reconnection sequence will start');
 }
