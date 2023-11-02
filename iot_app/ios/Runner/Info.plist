@@ -29,12 +29,6 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Looking for local tcp Bonjour service</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>mqtt.tcp</string>
-	</array>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
@@ -51,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Looking for local tcp Bonjour service</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>mqtt.tcp</string>
+	</array>
 </dict>
 </plist>
