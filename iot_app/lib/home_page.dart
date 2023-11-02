@@ -2,9 +2,13 @@
 
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+// import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:iot_app/widget/chart.dart';
 import 'package:iot_app/widget/clock.dart';
+// ignore: unused_import
+import 'package:iot_app/widget/weather_forecast.dart';
+import 'package:iot_app/widget/weather_info.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:developer' as developer;
@@ -145,83 +149,88 @@ class _MyHomePageState extends State<MyHomePage> {
         //       }),
         // ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/bg.png"),
-            fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/bg.png"),
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const SizedBox(height: 50),
-            Center(
-              child: Stack(
-                alignment: Alignment.topCenter,
-                children: [
-                  Positioned(
-                    bottom: 0,
-                    child: Container(
-                      width: size.width - 32,
-                      height: 200,
-                      decoration: ShapeDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment(-0.42, -0.91),
-                          end: Alignment(0.42, 0.91),
-                          colors: [Color(0xFF67E1D2), Color(0xFF53A8FF)],
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(height: 50),
+              Center(
+                child: Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    Positioned(
+                      bottom: 0,
+                      child: Container(
+                        width: size.width - 32,
+                        height: 200,
+                        decoration: ShapeDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment(-0.42, -0.91),
+                            end: Alignment(0.42, 0.91),
+                            colors: [Color(0xFF67E1D2), Color(0xFF53A8FF)],
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Column(children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Image.asset('assets/sun.png', scale: 2.5),
-                        const Padding(
-                          padding:  EdgeInsets.only(top: 55),
-                          child:  Text(
-                            '27 \u2103',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 40,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ho Chi Minh, Viet Nam',
+                    Column(children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Image.asset('assets/sun.png', scale: 2.5),
+                          const Padding(
+                            padding:  EdgeInsets.only(top: 55),
+                            child:  Text(
+                              '27 \u2103',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
+                                color: Colors.white70,
+                                fontSize: 40,
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            ClockWidget()
-                          ],
-                        ),
-                        Image.asset('assets/wind.png', scale: 2.5),
-                      ],
-                    )
-                  ]),
-                ],
+                          )
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ho Chi Minh, Viet Nam',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              ClockWidget()
+                            ],
+                          ),
+                          Image.asset('assets/wind.png', scale: 2.5),
+                        ],
+                      )
+                    ]),
+                  ],
+                ),
               ),
-            )
-          ],
+              const WeatherInfo(),
+              const LineChartSample10(),
+              // const WeatherForecast()
+            ],
+          ),
         ),
       ),
     );
