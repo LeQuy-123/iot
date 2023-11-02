@@ -63,6 +63,7 @@ class WeatherInfoState extends State<WeatherInfo> {
               return Text('Error: ${snapshot.error}');
             } else {
               final currentWeather = snapshot.data?.weatherInfoToday;
+              final currentSun = snapshot.data?.sunInfo;
               return Column(
                 children: [
                   const SizedBox(height: 50),
@@ -77,7 +78,7 @@ class WeatherInfoState extends State<WeatherInfo> {
                           colors: [Color(0xFF67E1D2), Color(0xFF53A8FF)],
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       child: Stack(
@@ -140,24 +141,151 @@ class WeatherInfoState extends State<WeatherInfo> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                      width: MediaQuery.of(context).size.width - 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(25),
+                            topRight: Radius.circular(25),
+                            bottomLeft: Radius.circular(25),
+                            bottomRight: Radius.circular(25)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 5,
+                            blurRadius: 7,
+                            offset: const Offset(0, 1), // changes position of shadow
+                          ),
+                        ],
+                      ),
+                      
+                      padding: const EdgeInsets.fromLTRB(40, 16, 40, 16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                children: [
+                                  const Text('Wind',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/WindSmall.png', scale: 2.5),
+                                  Text(
+                                      '${currentWeather?.wind.speed.toString()} m/s',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Text('Humidity',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/Drop.png', scale: 2.5),
+                                  Text(
+                                      '${currentWeather?.main.humidity.toString()}%',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Text('Pressure',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/CloudRain.png', scale: 2.5),
+                                  Text(
+                                      '${currentWeather?.main.pressure.toString()} hPa',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                children: [
+                                  const Text('Temp',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/Thermometer.png',
+                                      scale: 2.7),
+                                  Text(
+                                      '${currentWeather?.main.temp.toString()} \u2103',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Text('Sunrise',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/SunHorizon.png', scale: 2.5),
+                                  Text(
+                                      '${currentSun?.results.sunrise}',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Text('Sunset',
+                                      style: TextStyle(
+                                          color: Colors.black38,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  Image.asset('assets/SunHorizon.png',
+                                      scale: 2.5),
+                                  Text(
+                                      '${currentSun?.results.sunset}',
+                                      style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 5),
+                                ],
+                              ),
+                            ],
+                          )
+                        ],
+                      )),
                 ],
               );
             }
           },
         ),
-        Container(
-            width: MediaQuery.of(context).size.width - 32,
-            height: 180,
-            decoration: ShapeDecoration(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
-            child: Column(
-              children: [Row()],
-            )),
       ],
     );
   }

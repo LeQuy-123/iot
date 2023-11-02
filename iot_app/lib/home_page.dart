@@ -5,7 +5,7 @@ import 'dart:io';
 // import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:iot_app/widget/chart.dart';
-import 'package:iot_app/widget/clock.dart';
+// import 'package:iot_app/widget/clock.dart';
 // ignore: unused_import
 import 'package:iot_app/widget/weather_forecast.dart';
 import 'package:iot_app/widget/weather_info.dart';
