@@ -13,7 +13,6 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:developer' as developer;
 
-
 final client = MqttServerClient('192.168.1.13', '');
 
 /// The subscribed callback
@@ -124,12 +123,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(color: Colors.black26, fontWeight: FontWeight.w700)),
+        title: Text(widget.title,
+            style: const TextStyle(
+                color: Colors.black26, fontWeight: FontWeight.w700)),
         // actions: [
         //   CupertinoSwitch(
         //       // overrides the default green color of the track
@@ -157,77 +157,13 @@ class _MyHomePageState extends State<MyHomePage> {
               fit: BoxFit.cover,
             ),
           ),
-          child: Column(
+          child: const Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const SizedBox(height: 50),
-              Center(
-                child: Stack(
-                  alignment: Alignment.topCenter,
-                  children: [
-                    Positioned(
-                      bottom: 0,
-                      child: Container(
-                        width: size.width - 32,
-                        height: 200,
-                        decoration: ShapeDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment(-0.42, -0.91),
-                            end: Alignment(0.42, 0.91),
-                            colors: [Color(0xFF67E1D2), Color(0xFF53A8FF)],
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Column(children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Image.asset('assets/sun.png', scale: 2.5),
-                          const Padding(
-                            padding:  EdgeInsets.only(top: 55),
-                            child:  Text(
-                              '27 \u2103',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 40,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Ho Chi Minh, Viet Nam',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              ClockWidget()
-                            ],
-                          ),
-                          Image.asset('assets/wind.png', scale: 2.5),
-                        ],
-                      )
-                    ]),
-                  ],
-                ),
-              ),
-              const WeatherInfo(),
-              const LineChartSample10(),
+              SizedBox(height: 66),
+
+              WeatherInfo(),
+              LineChartSample10(),
               // const WeatherForecast()
             ],
           ),

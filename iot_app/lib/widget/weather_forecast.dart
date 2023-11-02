@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:intl/intl.dart';
+import 'package:iot_app/widget/helper.dart';
 
 class WeatherForecast extends StatefulWidget {
   const WeatherForecast({super.key});
@@ -24,7 +25,6 @@ class WeatherForecastState extends State<WeatherForecast> {
   }
 
   Future<void> fetchWeatherData() async {
-    const apiKey = 'ed02b217540012b28c3d6ff72c8ac711';
     const lat = '10.82302';
     const lon = '106.62965';
     const apiUrl =
