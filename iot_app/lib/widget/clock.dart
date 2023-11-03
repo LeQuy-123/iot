@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/scheduler.dart';
 
 class ClockWidget extends StatefulWidget {
   const ClockWidget({super.key});
@@ -9,13 +10,18 @@ class ClockWidget extends StatefulWidget {
   ClockWidgetState createState() => ClockWidgetState();
 }
 
-class ClockWidgetState extends State<ClockWidget> {
+class ClockWidgetState extends State<ClockWidget>
+    with TickerProviderStateMixin {
   String formattedTime = '';
+  late Ticker _ticker;
 
   @override
   void initState() {
     super.initState();
-    updateClock();
+    _ticker = createTicker((_) {
+      updateClock();
+    });
+    _ticker.start();
   }
 
   void updateClock() {
@@ -25,7 +31,12 @@ class ClockWidgetState extends State<ClockWidget> {
     setState(() {
       formattedTime = formatted;
     });
-    Future.delayed(const Duration(seconds: 1), updateClock);
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose(); // Cancel the ticker when the widget is disposed
+    super.dispose();
   }
 
   @override
