@@ -119,7 +119,7 @@ void setup() {
   pinMode(MQ7_PIN_CONTROLL, OUTPUT);
   pinMode(MQ135_PIN_CONTROLL, OUTPUT);
 
-  reconnect();
+  // reconnect();
   publicData();
 }
 
@@ -202,8 +202,8 @@ void publicData () {
     delay(200);
     
  
-    // Serial.print(Gas); Serial.println(" Gas");
-    // Serial.print(Co); Serial.println(" Co");
+    Serial.print(T_inC); Serial.println(" C");
+    Serial.print(H_inPer); Serial.println(" P");
 
     lcd.clear();  
     lcd.setCursor(0,0);   //Set cursor to character 0 on line 0

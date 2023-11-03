@@ -3,14 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:iot_app/model/location.dart';
 import 'package:iot_app/model/sun_info.dart';
 import 'package:iot_app/model/weather.dart';
-import 'package:iot_app/provider/log_provider.dart';
 import 'package:iot_app/widget/clock.dart';
 import 'package:iot_app/widget/helper.dart';
 
 class WeatherInfo extends StatefulWidget {
-  const WeatherInfo({super.key});
+  final Location selectedLocation;
+  const WeatherInfo({super.key, required this.selectedLocation});
 
   @override
   WeatherInfoState createState() => WeatherInfoState();
@@ -27,19 +28,25 @@ class WeatherInfoState extends State<WeatherInfo> {
     super.initState();
     weatherData = fetchWeatherData();
   }
-
+  @override
+  void didUpdateWidget(covariant WeatherInfo oldWidget) {
+    if (oldWidget.selectedLocation != widget.selectedLocation) {
+      // Trigger data fetching when the selected location changes
+      weatherData = fetchWeatherData();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
   Future<FutureData> fetchWeatherData() async {
-    const lat = '10.82302';
-    const lon = '106.62965';
-    const apiUrl = 'https://api.sunrisesunset.io/json?lat=$lat&lng=$lon';
-    const weatherApi =
+    final lat = widget.selectedLocation.lat;
+    final lon = widget.selectedLocation.lon;
+    final apiUrl = 'https://api.sunrisesunset.io/json?lat=$lat&lng=$lon';
+    final weatherApi =
         'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
     final response = await http.get(Uri.parse(apiUrl));
     final weatherResponse = await http.get(Uri.parse(weatherApi));
     if (response.statusCode == 200 && weatherResponse.statusCode == 200) {
       final data = json.decode(response.body);
       final dataWeather = json.decode(weatherResponse.body);
-      Log.print('dataWeather = > ${dataWeather.toString()}');
       FutureData res = FutureData(
           weatherInfoToday: WeatherInfoToday.fromJson(dataWeather),
           sunInfo: SunInfo.fromJson(data));
@@ -118,19 +125,19 @@ class WeatherInfoState extends State<WeatherInfo> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Column(
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Ho Chi Minh, Viet Nam',
-                                      style: TextStyle(
+                                      '${widget.selectedLocation.name}, ${widget.selectedLocation.country}',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                         fontFamily: 'Inter',
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
-                                    ClockWidget()
+                                    const ClockWidget()
                                   ],
                                 ),
                                 Image.asset('assets/wind.png', scale: 4),
