@@ -9,14 +9,23 @@ import 'package:iot_app/theme/dark_theme.dart';
 import 'package:iot_app/theme/default_theme.dart';
 import 'package:iot_app/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // ignore: unused_local_variable
   String? token = await FirebaseMessagingService().configure();
   await FirebaseMessagingService().subscribeToTopic('iot');
-
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
 
