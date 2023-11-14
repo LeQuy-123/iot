@@ -1,139 +1,103 @@
-// ignore_for_file: avoid_developer.log
-
 import 'dart:convert';
-import 'dart:io';
 
-// import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:iot_app/model/location.dart';
-// import 'package:iot_app/widget/clock.dart';
-// ignore: unused_import
+import 'package:iot_app/model/weather.dart';
+import 'package:iot_app/provider/log_provider.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'dart:developer' as developer;
-
-final client = MqttServerClient('192.168.1.13', '');
-
-/// The subscribed callback
-void onSubscribed(String topic) {
-  developer.log('EXAMPLE::Subscription confirmed for topic $topic');
-}
-
-/// The unsolicited disconnect callback
-void onDisconnected() {
-  developer
-      .log('EXAMPLE::OnDisconnected client callback - Client disconnection');
-  if (client.connectionStatus!.disconnectionOrigin ==
-      MqttDisconnectionOrigin.solicited) {
-    developer
-        .log('EXAMPLE::OnDisconnected callback is solicited, this is correct');
-  } else {
-    developer.log(
-        'EXAMPLE::OnDisconnected callback is unsolicited or none, this is incorrect - exiting');
-  }
-}
-
-/// The successful connect callback
-void onConnected() {
-  developer.log(
-      'EXAMPLE::OnConnected client callback - Client connection was successful');
-}
-
-void onAutoReconnect() {
-  developer.log(
-      'EXAMPLE::onAutoReconnect client callback - Client auto reconnection sequence will start');
-}
-
+import 'package:http/http.dart' as http;
 class MqttPage extends StatefulWidget {
-  const MqttPage({super.key, required this.title});
-  final String title;
+  const MqttPage({super.key});
 
   @override
-  State<MqttPage> createState() => _MqttPageState();
+  MqttPageState createState() => MqttPageState();
 }
 
-class _MqttPageState extends State<MqttPage> {
-  bool isOn = false;
-  List<Location> locations = []; // List of Location objects
-  Location? selectedLocation;
+class MqttPageState extends State<MqttPage> {
+  TextEditingController ipAddressController = TextEditingController();
+  late MqttServerClient client;
+  String receivedData = '';
+  String temperature = "";
+  String humidity = "";
+  WeatherInfoToday? weatherData;
+  List<WeatherInfoToday> forecastData = [];
+
+  bool isConnected = false;
   @override
   void initState() {
-    initMQTT();
+    getToken();
     super.initState();
   }
+  void getToken() async {
+    var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+    var request = http.Request( 'POST', Uri.parse('https://192.168.1.6/auth/realms/master/protocol/openid-connect/token'));
+    request.bodyFields = {
+      'grant_type': 'client_credentials',
+      'client_id': 'quy',
+      'client_secret': 'JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX'
+    };
+    request.headers.addAll(headers);
 
-  Future<void> initMQTT() async {
-    const pubTopic = "master/client1/attribute/+/#";
-    final connMess = MqttConnectMessage()
-        .withClientIdentifier('client1')
-        .withWillTopic(
-            'willtopic') // If you set this you must set a will message
-        .withWillMessage('My Will message')
-        .startClean() // Non persistent session for testing
-        .withWillQos(MqttQos.atLeastOnce);
-    client.logging(on: false);
-    client.autoReconnect = true;
-    client.onAutoReconnect = onAutoReconnect;
-    client.setProtocolV311();
-    client.keepAlivePeriod = 20;
-    client.connectTimeoutPeriod = 20000; // milliseconds
-    client.onDisconnected = onDisconnected;
-    client.onConnected = onConnected;
-    client.onSubscribed = onSubscribed;
-    client.connectionMessage = connMess;
-    try {
-      await client.connect('master:quy', 'JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX');
-    } on NoConnectionException catch (e) {
-      // Raised by the client when connection fails.
-      developer.log('EXAMPLE::client exception - $e');
-      client.disconnect();
-    } on SocketException catch (e) {
-      // Raised by the socket layer
-      developer.log('EXAMPLE::socket exception - $e');
-      client.disconnect();
-    }
-    if (client.connectionStatus!.state == MqttConnectionState.connected) {
-      developer.log('EXAMPLE::Mosquitto client connected');
+    http.StreamedResponse response = await request.send();
+    Log.print("data--> ${response.statusCode}");
+    if (response.statusCode == 200) {
+      final data = await response.stream.bytesToString();
+      Log.print("data--> $data");
     } else {
-      /// Use status here rather than state if you also want the broker return code.
-      developer.log(
-          'EXAMPLE::ERROR Mosquitto client connection failed - disconnecting, status is ${client.connectionStatus}');
-      client.disconnect();
-      // exit(-1);
+      Log.print( "response--> ${response.reasonPhrase}" );
     }
-    client.subscribe(pubTopic, MqttQos.exactlyOnce);
-    client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      final recMess = c![0].payload as MqttPublishMessage;
-      final pt =
-          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-      developer.log(
-          'EXAMPLE::Change notification:: topic is <${c[0].topic}>, payload is <-- $pt -->');
-      developer.log('');
-    });
-    client.published!.listen((MqttPublishMessage message) {
-      developer.log(
-          'EXAMPLE::Published notification:: topic is ${message.variableHeader!.topicName}, with Qos ${message.header!.qos}');
-    });
+  }
+  void connectToMqttServer(String ipAddress) async {
+    client = MqttServerClient(ipAddress, 'iot_app');
+    final MqttConnectMessage connMess = MqttConnectMessage()
+        .withClientIdentifier('iot_app')
+        .withWillTopic('willtopic')
+        .withWillMessage('Will message')
+        .startClean()
+        .withWillQos(MqttQos.atLeastOnce)
+        .withClientIdentifier('iot_app')
+        .authenticateAs('master:quy', 'JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX');
+    client.connectionMessage = connMess;
+    client.keepAlivePeriod = 30;
+    try {
+      await client.connect();
+      setState(() {
+        isConnected = true;
+      });
+      client.subscribe('master/iot_app/attribute/+/#', MqttQos.atLeastOnce);
+      client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+        final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+        final String message =
+            MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+        final jsonMessage = json.decode(message);
+
+        if (jsonMessage["attributeState"]["ref"]["name"] == "temperature") {
+          setState(() {
+            temperature = jsonMessage["attributeState"]["value"].toString();
+          });
+        }
+        if (jsonMessage["attributeState"]["ref"]["name"] == "humidity") {
+          setState(() {
+            humidity = jsonMessage["attributeState"]["value"].toString();
+          });
+        }
+      });
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Failed to connect to the MQTT server',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+      Log.print('Exception 123: $e');
+    }
   }
 
- 
-
-  @override
-  void dispose() {
+  void disconnectFromMqttServer() {
     client.disconnect();
-    super.dispose();
-  }
-
-  // Function to search for locations based on the input
-  void searchLocations(String query) {
-    // Perform the search logic here and update the 'locations' list
     setState(() {
-      locations = locations.where((location) {
-        final name = location.name.toLowerCase();
-        final lowerQuery = query.toLowerCase();
-        return name.contains(lowerQuery);
-      }).toList();
+      isConnected = false;
+      receivedData = '';
     });
   }
 
@@ -142,44 +106,64 @@ class _MqttPageState extends State<MqttPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.title,
-            style: const TextStyle(
-                color: Colors.black26, fontWeight: FontWeight.w700)),
-        actions: [
-          if (locations.isNotEmpty)
-            DropdownButton<Location>(
-              value: selectedLocation,
-              onChanged: (Location? newValue) {
-                setState(() {
-                  selectedLocation = newValue;
-                });
-              },
-              items: locations
-                  .map<DropdownMenuItem<Location>>((Location location) {
-                return DropdownMenuItem<Location>(
-                  value: location,
-                  child: Text(location.name),
-                );
-              }).toList(),
-            ),
-        ],
+        title: const Text('MQTT Page'),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/bg.png"),
-              fit: BoxFit.fill,
-            ),
+      body: Container(
+        width: MediaQuery.of(context).size.width,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/bg.png"),
+            fit: BoxFit.fill,
           ),
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(height: 66),
-            ],
-          ),
+        ),
+        child: Column(
+          children: <Widget>[
+            SizedBox(height: AppBar().preferredSize.height + 10),
+            if (!isConnected)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: ipAddressController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter IP Address (e.g., 0.0.0.0)',
+                  ),
+                ),
+              ),
+            if (!isConnected)
+              ElevatedButton(
+                onPressed: () {
+                  if (ipAddressController.text != '') {
+                    connectToMqttServer(ipAddressController.text);
+                  }
+                },
+                child: const Text('Connect'),
+              ),
+            if (isConnected)
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: disconnectFromMqttServer,
+                    child: const Text('Disconnect'),
+                  ),
+                  Column(
+                    children: [
+                      if(temperature != "") Text('Temprature: ${temperature.toString()} \u2103'),
+                      if (humidity != "") Text('Humidity: ${humidity.toString()} %'),
+                    ],
+                  ),
+                ],
+              )
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    if (isConnected) {
+      client.disconnect();
+    }
+    super.dispose();
   }
 }

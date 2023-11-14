@@ -7,7 +7,7 @@
 #include  <ArduinoJson.h>
 #include "secret.h"
 #include <PubSubClient.h>
-#define DHT_PIN D5 // DHT22 an PIN D6 (GPIO 12)
+#define DHT_PIN D4 
  
 #define MQ7_PIN_CONTROLL D6 
 #define MQ135_PIN_CONTROLL D7
@@ -20,7 +20,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 // timer instead of wait
 long now = millis();
 long lastMeasure = 0;
-int t_delay = 15000;
+int t_delay = 5000;
 
  
 //Objects
@@ -139,7 +139,7 @@ void loop() {
     now = millis();
   // Publishes new temperature and humidity every 30 seconds
   if (now - lastMeasure > t_delay - 400) {
-      reconnect();
+      // reconnect();
       publicData();
 
   }
@@ -204,26 +204,26 @@ void publicData () {
  
     Serial.print(T_inC); Serial.println(" C");
     Serial.print(H_inPer); Serial.println(" P");
-
-    lcd.clear();  
-    lcd.setCursor(0,0);   //Set cursor to character 0 on line 0
-    lcd.print(String(T_inC));
-    lcd.print("C ");
-    lcd.setCursor(8,0);
-    lcd.print(String(H_inPer));
-    lcd.print("%");
-    lcd.setCursor(0,1);   //Set cursor to character 0 on line 1
-    lcd.print(String(Gas));
-    lcd.print("G ");
-    lcd.setCursor(8,1); 
-    lcd.print(String(Co));
-    lcd.print("Co");
+    Serial.print(Co); Serial.println(" Co");
+    // lcd.clear();  
+    // lcd.setCursor(0,0);   //Set cursor to character 0 on line 0
+    // lcd.print(String(T_inC));
+    // lcd.print("C ");
+    // lcd.setCursor(8,0);
+    // lcd.print(String(H_inPer));
+    // lcd.print("%");
+    // lcd.setCursor(0,1);   //Set cursor to character 0 on line 1
+    // lcd.print(String(Gas));
+    // lcd.print("G ");
+    // lcd.setCursor(8,1); 
+    // lcd.print(String(Co));
+    // lcd.print("Co");
     
-    client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
-    client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
+    // client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
+    // client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
 
-    client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
-    client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
+    // client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
+    // client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
  
 }
 

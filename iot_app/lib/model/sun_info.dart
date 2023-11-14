@@ -26,7 +26,7 @@ class Results {
   final String goldenHour;
   final String dayLength;
   final String timezone;
-  final int utcOffset;
+  final int? utcOffset;
 
   Results({
     required this.sunrise,
@@ -39,7 +39,7 @@ class Results {
     required this.goldenHour,
     required this.dayLength,
     required this.timezone,
-    required this.utcOffset,
+     this.utcOffset,
   });
 
   factory Results.fromJson(Map<String, dynamic> json) {
@@ -54,7 +54,7 @@ class Results {
       goldenHour: json['golden_hour'],
       dayLength: json['day_length'],
       timezone: json['timezone'],
-      utcOffset: json['utc_offset'],
+      utcOffset: json['utc_offset'] ?? 0,
     );
   }
 }

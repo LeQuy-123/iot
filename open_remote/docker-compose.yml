@@ -27,7 +27,7 @@ services:
       #- "127.0.0.1:8404:8404" # Localhost metrics access
     volumes:
       - proxy-data:/deployment
-      - /Users/mac/Desktop/iot/open_remote/mycert.pem:/etc/haproxy/certs/mycert.pem
+      - /Users/mac/Desktop/iot/open_remote/mycert.pem:/etc/haproxy/certs/00-custom
     environment:
       LE_EMAIL: ${OR_EMAIL_ADMIN:-}
       # DOMAINNAME: ip/domain(it should be comment-out)

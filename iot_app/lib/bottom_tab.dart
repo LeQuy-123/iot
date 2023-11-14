@@ -38,7 +38,7 @@ class _NavigationBottomTabState extends State<NavigationBottomTab> {
       ),
       body: <Widget>[
         const MyHomePage(title: 'Weather'),
-        const MqttPage(title: 'Iot')
+        const MqttPage()
       ][currentPageIndex],
     );
   }
