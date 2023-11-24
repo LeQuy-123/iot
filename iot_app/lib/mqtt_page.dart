@@ -22,8 +22,8 @@ class MqttPageState extends State<MqttPage> {
   TextEditingController ipAddressController = TextEditingController();
   late MqttServerClient client;
   String receivedData = '';
-  String temperature = "";
-  String humidity = "";
+  String temperature = "0.0";
+  String humidity =  "0.0";
   WeatherInfoToday? weatherData;
 
   List<Asset> listAsset = [];

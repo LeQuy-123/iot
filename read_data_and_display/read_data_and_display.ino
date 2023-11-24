@@ -9,8 +9,8 @@
 #include <PubSubClient.h>
 #define DHT_PIN D4 
  
-#define MQ7_PIN_CONTROLL D6 
-#define MQ135_PIN_CONTROLL D7
+#define MQ7_PIN_CONTROLL D7 
+#define MQ135_PIN_CONTROLL D6
 
 #define DHTTYPE DHT22
 DHT dht(DHT_PIN, DHTTYPE);
@@ -39,9 +39,9 @@ void configModeCallback (WiFiManager *myWiFiManager)
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  // Leonardo: wait for serial port to connect
+  //  wait for serial port to connect
   while (!Serial) 
     {
     }
@@ -119,19 +119,19 @@ void setup() {
   pinMode(MQ7_PIN_CONTROLL, OUTPUT);
   pinMode(MQ135_PIN_CONTROLL, OUTPUT);
 
-  // reconnect();
+  reconnect();
   publicData();
 }
 
 int analogReadMQ7() {
-    digitalWrite(MQ7_PIN_CONTROLL, HIGH); // Turn D1 On
-    digitalWrite(MQ135_PIN_CONTROLL, LOW); // Turn D2 Off
+    digitalWrite(MQ7_PIN_CONTROLL, HIGH); // Turn MQ7 On
+    digitalWrite(MQ135_PIN_CONTROLL, LOW); // Turn MQ135 Off
     return analogRead(A0);
 }
  
 int analogReadMQ135() {
-    digitalWrite(MQ7_PIN_CONTROLL, LOW); //  Turn D1 On
-    digitalWrite(MQ135_PIN_CONTROLL, HIGH); // Turn D2 Off
+    digitalWrite(MQ7_PIN_CONTROLL, LOW); //  Turn MQ7 Off
+    digitalWrite(MQ135_PIN_CONTROLL, HIGH); // Turn MQ135 On
     return analogRead(A0);
 }
 
@@ -139,7 +139,7 @@ void loop() {
     now = millis();
   // Publishes new temperature and humidity every 30 seconds
   if (now - lastMeasure > t_delay - 400) {
-      // reconnect();
+      reconnect();
       publicData();
 
   }
@@ -205,25 +205,29 @@ void publicData () {
     Serial.print(T_inC); Serial.println(" C");
     Serial.print(H_inPer); Serial.println(" P");
     Serial.print(Co); Serial.println(" Co");
-    // lcd.clear();  
-    // lcd.setCursor(0,0);   //Set cursor to character 0 on line 0
-    // lcd.print(String(T_inC));
-    // lcd.print("C ");
-    // lcd.setCursor(8,0);
-    // lcd.print(String(H_inPer));
-    // lcd.print("%");
-    // lcd.setCursor(0,1);   //Set cursor to character 0 on line 1
-    // lcd.print(String(Gas));
-    // lcd.print("G ");
-    // lcd.setCursor(8,1); 
-    // lcd.print(String(Co));
-    // lcd.print("Co");
-    
-    // client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
-    // client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
+    Serial.print(Gas); Serial.println(" Gas");
+    Serial.println("===========================================");
 
-    // client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
-    // client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
+    lcd.clear();  
+    lcd.setCursor(0,0);   //Set cursor to character 0 on line 0
+    lcd.print(String(T_inC));
+    lcd.print((char)223); // this is for celcius symbol
+    lcd.print("C");
+    lcd.setCursor(8,0);
+    lcd.print(String(H_inPer));
+    lcd.print("%");
+    lcd.setCursor(0,1);   //Set cursor to character 0 on line 1
+    lcd.print(String(Gas));
+    lcd.print("G ");
+    lcd.setCursor(8,1); 
+    lcd.print(String(Co));
+    lcd.print("Co");
+    
+    client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
+    client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
+
+    client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
+    client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
  
 }
 

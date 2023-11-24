@@ -21,6 +21,7 @@ class _NavigationBottomTabState extends State<NavigationBottomTab> {
             currentPageIndex = index;
           });
         },
+        backgroundColor: Colors.transparent,
         indicatorColor: const Color(0xFF579FF1),
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
