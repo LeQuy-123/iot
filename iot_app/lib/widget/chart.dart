@@ -3,9 +3,12 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:iot_app/provider/log_provider.dart';
 
 class LineChartSample10 extends StatefulWidget {
-  const LineChartSample10({super.key});
+  const LineChartSample10({super.key, required this.selectedDateTime, required this.selectedAssetId});
+  final DateTime? selectedDateTime; 
+  final String selectedAssetId; 
 
   final Color sinColor = Colors.redAccent;
   final Color cosColor = Colors.blueAccent;
@@ -39,7 +42,24 @@ class _LineChartSample10State extends State<LineChartSample10> {
       xValue += step;
     });
   }
+  @override
+  void didUpdateWidget(covariant LineChartSample10 oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
+    // Check if selectedDateTime or selectedAssetId has changed
+    if (widget.selectedDateTime != oldWidget.selectedDateTime ||
+        widget.selectedAssetId != oldWidget.selectedAssetId) {
+      // Call your function here
+      onDataChanged();
+    }
+  }
+
+  // Function to be called when selectedDateTime or selectedAssetId changes
+  void onDataChanged() {
+    // Your logic here
+    Log.print(
+        'Data changed: ${widget.selectedDateTime}, ${widget.selectedAssetId}');
+  }
   @override
   Widget build(BuildContext context) {
     return cosPoints.isNotEmpty

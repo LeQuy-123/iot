@@ -4,8 +4,8 @@ import 'package:iot_app/provider/log_provider.dart';
 
 class AssetListSelectWidget extends StatefulWidget {
   final List<Asset> assets;
-
-  const AssetListSelectWidget({super.key, required this.assets, required Null Function(String id) onSelectAssets});
+  final Null Function(String id) onSelectAssets;
+  const AssetListSelectWidget({super.key, required this.assets, required this.onSelectAssets});
 
   @override
   AssetListSelectWidgetState createState() => AssetListSelectWidgetState();
@@ -26,6 +26,7 @@ class AssetListSelectWidgetState extends State<AssetListSelectWidget> {
         // Call your callback function with the asset ID
         if (newValue != null) {
           // Perform actions when a new asset is selected
+          widget.onSelectAssets(newValue.id);
           Log.print('Selected Asset: ${newValue.id}');
         }
       },

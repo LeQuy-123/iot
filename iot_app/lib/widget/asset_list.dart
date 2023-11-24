@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:iot_app/firebase_messaging.dart';
 import 'package:iot_app/model/asset.dart';
 import 'package:iot_app/provider/log_provider.dart';
-import 'package:iot_app/widget/custom_date_picker.dart';
 
 class AssetListWidget extends StatefulWidget {
   final List<Asset> assets;

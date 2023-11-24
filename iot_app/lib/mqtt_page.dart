@@ -6,6 +6,7 @@ import 'package:iot_app/model/asset.dart';
 import 'package:iot_app/model/weather.dart';
 import 'package:iot_app/provider/log_provider.dart';
 import 'package:iot_app/widget/asset_list_select.dart';
+import 'package:iot_app/widget/chart.dart';
 import 'package:iot_app/widget/custom_date_picker.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -27,7 +28,7 @@ class MqttPageState extends State<MqttPage> {
   String humidity = "0.0";
   WeatherInfoToday? weatherData;
 
-  DateTime selectedDateTime = DateTime.now();
+  DateTime? selectedDateTime;
   String selectedAssetId = '';
 
   List<Asset> listAsset = [];
@@ -269,21 +270,30 @@ class MqttPageState extends State<MqttPage> {
                         ),
                         Padding(
                           padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          child: Column(
                             children: [
-                              AssetListSelectWidget(
-                                  assets: listAsset,
-                                  onSelectAssets: (String id) {
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  AssetListSelectWidget(
+                                      assets: listAsset,
+                                      onSelectAssets: (String id) {
+                                        setState(() {
+                                          selectedAssetId = id;
+                                        });
+                                      }),
+                                  CustomDateTimePicker(onSelectTimeRange: (x) {
                                     setState(() {
-                                      selectedAssetId = id;
+                                      selectedDateTime = x;
                                     });
                                   }),
-                              CustomDateTimePicker(onSelectTimeRange: (x) {
-                                setState(() {
-                                  selectedDateTime = x;
-                                });
-                              }),
+                                ],
+                              ),
+                              if(selectedAssetId != '' && selectedDateTime != null)
+                              LineChartSample10(
+                                selectedDateTime: selectedDateTime,
+                                selectedAssetId: selectedAssetId
+                              )
                             ],
                           ),
                         ),
