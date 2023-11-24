@@ -5,7 +5,8 @@ import 'package:iot_app/model/access_token.dart';
 import 'package:iot_app/model/asset.dart';
 import 'package:iot_app/model/weather.dart';
 import 'package:iot_app/provider/log_provider.dart';
-import 'package:iot_app/widget/asset_list.dart';
+import 'package:iot_app/widget/asset_list_select.dart';
+import 'package:iot_app/widget/custom_date_picker.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -23,8 +24,11 @@ class MqttPageState extends State<MqttPage> {
   late MqttServerClient client;
   String receivedData = '';
   String temperature = "0.0";
-  String humidity =  "0.0";
+  String humidity = "0.0";
   WeatherInfoToday? weatherData;
+
+  DateTime selectedDateTime = DateTime.now();
+  String selectedAssetId = '';
 
   List<Asset> listAsset = [];
 
@@ -216,15 +220,17 @@ class MqttPageState extends State<MqttPage> {
                   children: [
                     Column(
                       children: [
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
-                            gradient:  LinearGradient(
+                            gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                double.parse(temperature) > 30.0 ? Colors.red : Colors.blue,
+                                double.parse(temperature) > 30.0
+                                    ? Colors.red
+                                    : Colors.blue,
                                 Colors.teal
                               ], // Gradient colors
                             ),
@@ -238,48 +244,49 @@ class MqttPageState extends State<MqttPage> {
                               ),
                             ],
                           ),
-                          child: Text(
-                            'Temperature: ${temperature.toString()} \u2103',
-                            style: const TextStyle(
-                              color: Colors.white, // Text color
-                              fontSize: 20.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.blue,
-                                Colors.teal
-                              ], // Gradient colors
-                            ),
-                            borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 5,
-                                blurRadius: 7,
-                                offset: const Offset(0, 3),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Temperature: ${temperature.toString()} \u2103',
+                                style: const TextStyle(
+                                  color: Colors.white, // Text color
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'Humidity: ${humidity.toString()} %',
+                                style: const TextStyle(
+                                  color: Colors.white, // Text color
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
-                          child: Text(
-                            'Humidity: ${humidity.toString()} %',
-                            style: const TextStyle(
-                              color: Colors.white, // Text color
-                              fontSize: 20.0,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              AssetListSelectWidget(
+                                  assets: listAsset,
+                                  onSelectAssets: (String id) {
+                                    setState(() {
+                                      selectedAssetId = id;
+                                    });
+                                  }),
+                              CustomDateTimePicker(onSelectTimeRange: (x) {
+                                setState(() {
+                                  selectedDateTime = x;
+                                });
+                              }),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        AssetListWidget(assets: listAsset)
                       ],
                     ),
                   ],
