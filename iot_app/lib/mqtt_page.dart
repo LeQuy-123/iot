@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:iot_app/model/access_token.dart';
 import 'package:iot_app/model/asset.dart';
 import 'package:iot_app/model/weather.dart';
 import 'package:iot_app/provider/log_provider.dart';
+import 'package:iot_app/provider/token_provider.dart';
 import 'package:iot_app/widget/asset_list_select.dart';
 import 'package:iot_app/widget/chart.dart';
 import 'package:iot_app/widget/custom_date_picker.dart';
@@ -33,37 +33,14 @@ class MqttPageState extends State<MqttPage> {
 
   List<Asset> listAsset = [];
 
+
   bool isConnected = false;
   @override
   void initState() {
     super.initState();
   }
 
-  Future<String?> getToken(String ipAddress) async {
-    var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
-    var request = http.Request(
-        'POST',
-        Uri.parse(
-            'https://$ipAddress/auth/realms/master/protocol/openid-connect/token'));
-    request.bodyFields = {
-      'grant_type': 'client_credentials',
-      'client_id': 'quy',
-      'client_secret': 'JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX'
-    };
-    request.headers.addAll(headers);
-
-    http.StreamedResponse response = await request.send();
-    Log.print("data--> ${response.statusCode}");
-    if (response.statusCode == 200) {
-      final data = await response.stream.bytesToString();
-      Map<String, dynamic> jsonMap = json.decode(data);
-      AccessToken accessToken = AccessToken.fromJson(jsonMap);
-      return accessToken.accessToken;
-    } else {
-      Log.print("response--> ${response.reasonPhrase}");
-      return null;
-    }
-  }
+ 
 
   void connectToMqttServer(String ipAddress) async {
     getAssestsList(ipAddress);
@@ -120,7 +97,7 @@ class MqttPageState extends State<MqttPage> {
   }
 
   void getAssestsList(String ipAddress) async {
-    String? token = await getToken(ipAddress);
+    String? token = await TokenProvider.getToken(ipAddress);
 
     var headers = {
       'Content-Type': 'application/json', // Change content type to JSON
@@ -268,11 +245,11 @@ class MqttPageState extends State<MqttPage> {
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              Row(
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   AssetListSelectWidget(
@@ -289,13 +266,18 @@ class MqttPageState extends State<MqttPage> {
                                   }),
                                 ],
                               ),
-                              if(selectedAssetId != '' && selectedDateTime != null)
-                              LineChartSample10(
+                            ),
+                            if(selectedAssetId != '' && selectedDateTime != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 30),
+                              child: LineChartSample10(
                                 selectedDateTime: selectedDateTime,
-                                selectedAssetId: selectedAssetId
-                              )
-                            ],
-                          ),
+                                selectedAssetId: selectedAssetId,
+                                temperature: temperature,
+                                ipAddress: ipAddressController.text
+                              ),
+                            )
+                          ],
                         ),
                       ],
                     ),

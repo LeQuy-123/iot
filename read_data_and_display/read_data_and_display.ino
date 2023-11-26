@@ -1,150 +1,160 @@
 #include <DHT.h>
 #include <LiquidCrystal_I2C.h>
-#include <ESP8266WiFi.h> //https://github.com/esp8266/Arduino
+#include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include "WiFiManager.h" //https://github.com/tzapu/WiFiManager
-#include  <ArduinoJson.h>
+#include "WiFiManager.h"
+#include <ArduinoJson.h>
 #include "secret.h"
 #include <PubSubClient.h>
-#define DHT_PIN D4 
- 
-#define MQ7_PIN_CONTROLL D7 
+
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+
+#define DHT_PIN D4
+#define MQ7_PIN_CONTROLL D7
 #define MQ135_PIN_CONTROLL D6
-
 #define DHTTYPE DHT22
-DHT dht(DHT_PIN, DHTTYPE);
-// V$L$oft@2019
-LiquidCrystal_I2C lcd(0x27,16,2); 
 
-// timer instead of wait
+DHT dht(DHT_PIN, DHTTYPE);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+WiFiClient askClient;
+PubSubClient client(askClient);
+
 long now = millis();
 long lastMeasure = 0;
 int t_delay = 5000;
 
- 
-//Objects
-WiFiClient askClient; //Non-SSL Client, also remove the comments for askClient.setCACert(local_root_ca);
+ESP8266WebServer server(80);
 
-PubSubClient client(askClient);
+String mqttServerInput = "";  // To store the user-input MQTT server IP address
 
- 
-void configModeCallback (WiFiManager *myWiFiManager)
+void handleRoot() {
+  String html = "<html><body>";
+  html += "<h1>MQTT Server Configuration</h1>";
+  html += "<form action='/save' method='get'>";
+  html += "MQTT Server IP: <input type='text' name='mqttServer' value='" + mqttServerInput + "'><br>";
+  html += "<input type='submit' value='Save'>";
+  html += "</form></body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleSave() {
+  mqttServerInput = server.arg("mqttServer");
+  server.send(200, "text/plain", "MQTT Server IP saved: " + mqttServerInput);
+}
+
+void configModeCallback(WiFiManager *myWiFiManager)
 {
   Serial.println("Entered config mode");
   Serial.println(WiFi.softAPIP());
   Serial.println(myWiFiManager->getConfigPortalSSID());
 }
 
+void displayOnLCD(String line1, String line2)
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
+}
 
-void setup() {
-  // put your setup code here, to run once:
+void setup()
+{
   Serial.begin(115200);
 
-  //  wait for serial port to connect
-  while (!Serial) 
-    {
-    }
+  while (!Serial)
+  {
+  }
 
-  Serial.println ();
-  Serial.println ("I2C scanner. Scanning ...");
   byte count = 0;
-  
   Wire.begin();
   for (byte i = 8; i < 120; i++)
   {
-    Wire.beginTransmission (i);
-    if (Wire.endTransmission () == 0)
-      {
-      Serial.print ("Found address: ");
-      Serial.print (i, DEC);
-      Serial.print (" (0x");
-      Serial.print (i, HEX);
-      Serial.println (")");
+    Wire.beginTransmission(i);
+    if (Wire.endTransmission() == 0)
+    {
       count++;
-      delay (1);  // maybe unneeded?
-      } // end of good response
-  } 
+      delay(1);
+    }
+  }
   lcd.init();
-  lcd.backlight();    
+  lcd.backlight(); 
   
-  Serial.println ("Done.");
-  Serial.print ("Found ");
-  Serial.print (count, DEC);
-  Serial.println (" device(s).");
-  
+  displayOnLCD("Connecting to", "WiFi...");
 
-  lcd.clear();  
-  lcd.setCursor(0,0); 
-  lcd.print("Connecting to");
-  lcd.setCursor(0,1); 
-  lcd.print("wifi....");
-
-  //Khai bao wifiManager
   WiFiManager wifiManager;
-  //Setup callback de khoi dong AP voi SSID "ESP+chipID"
   wifiManager.setAPCallback(configModeCallback);
+
   if (!wifiManager.autoConnect())
   {
-    lcd.clear();  
-    lcd.setCursor(0,0); 
-    lcd.print("Failed to connect");
-    Serial.println("failed to connect and hit timeout");
-    //Neu ket noi that bai thi reset
+    displayOnLCD("Failed to connect", "Resetting...");
     ESP.reset();
     delay(1000);
   }
-  
-  // Thanh cong thi bao ra man hinh
-  Serial.println("connected...");
- 
-  
-  // askClient.setFingerprint(fingerprint);
-  // askClient.setTrustAnchors(&cert);
-  Serial.println("********** Attempting MQTT connection...");
-  
+
+  displayOnLCD("Connected to", WiFi.SSID());
+
+  Serial.println("Connected to WiFi");
+
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
-  
-  lcd.clear();  
-  lcd.setCursor(0,0); 
-  lcd.print("Attempting MQTT");
-  lcd.setCursor(0,1); 
-  lcd.print("connection....");
-  
+
+  displayOnLCD("Connecting to", "MQTT...");
+
   dht.begin();
   pinMode(DHT_PIN, INPUT);
   pinMode(A0, INPUT);
-
   pinMode(MQ7_PIN_CONTROLL, OUTPUT);
   pinMode(MQ135_PIN_CONTROLL, OUTPUT);
 
-  reconnect();
-  publicData();
-}
+   // Setup WiFi and add custom parameters (MQTT server IP)
+  WiFiManagerParameter custom_mqtt_server("mqttServer", "MQTT Server IP", mqttServerInput.c_str(), 40);
 
+  wifiManager.addParameter(&custom_mqtt_server);
+
+  // Setup web server routes
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/save", HTTP_GET, handleSave);
+  
+  displayOnLCD("IP: ", WiFi.localIP().toString());
+  
+  server.begin();
+
+  // reconnect();
+  // publicData();
+}
 int analogReadMQ7() {
+    delay(100);
     digitalWrite(MQ7_PIN_CONTROLL, HIGH); // Turn MQ7 On
+    delay(200);
     digitalWrite(MQ135_PIN_CONTROLL, LOW); // Turn MQ135 Off
+    delay(200);
     return analogRead(A0);
 }
  
 int analogReadMQ135() {
+    delay(100);
     digitalWrite(MQ7_PIN_CONTROLL, LOW); //  Turn MQ7 Off
+    delay(200);
     digitalWrite(MQ135_PIN_CONTROLL, HIGH); // Turn MQ135 On
+    delay(200);
     return analogRead(A0);
 }
 
 void loop() {
-    now = millis();
-  // Publishes new temperature and humidity every 30 seconds
-  if (now - lastMeasure > t_delay - 400) {
+  server.handleClient();
+  now = millis();
+  // Check if the MQTT server address is available
+  if (mqttServerInput.length() > 0) {
+    // Publishes new temperature and humidity every 30 seconds
+    if (now - lastMeasure > t_delay - 400) {
       reconnect();
       publicData();
-
+   }
   }
- 
-
 }
 
  
@@ -158,26 +168,27 @@ void callback(char* topic, byte * payload, unsigned int length) {
   }
 
 }
-
+ 
 //MQTT reconnect
-void reconnect() {
+void reconnect()
+{
   // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.println("********** Attempting MQTT connection...");
-    // Attempt to connect
-    Serial.print("ClientID to: ");
-    Serial.println(ClientID);
-    Serial.print("username to: ");
-    Serial.println(username);
-    Serial.print("mqttpass to: ");
-    Serial.println(mqttpass);
+  while (!client.connected())
+  {
+    displayOnLCD("Connecting to", "MQTT...");
 
-    if (client.connect(ClientID, username, mqttpass, lastwill, 1, 1, lastwillmsg)) {
+    Serial.println("********** Attempting MQTT connection...");
+
+    if (client.connect(ClientID, username, mqttpass, lastwill, 1, 1, lastwillmsg))
+    {
       Serial.println("-> MQTT client connected");
       client.subscribe(topic);
       Serial.print("Subscribed to: ");
       Serial.println(topic);
-    } else {
+      displayOnLCD("Connected to", "MQTT");
+    }
+    else
+    {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println("-> try again in 5 seconds");
@@ -187,48 +198,35 @@ void reconnect() {
   }
 }
 
-void publicData () {
-   lastMeasure = now;
-  
+void publicData()
+{
+  lastMeasure = now;
 
-   // Read DHT22
-    float T_inC, H_inPer, Gas, Co;
-    T_inC=dht.readTemperature();
-    H_inPer=dht.readHumidity();
-    
-    Co = analogReadMQ7(); // Read Analog value of first sensor
-    delay(200);
-    Gas = analogReadMQ135(); // Read Analog value of second sensor
-    delay(200);
-    
- 
-    Serial.print(T_inC); Serial.println(" C");
-    Serial.print(H_inPer); Serial.println(" P");
-    Serial.print(Co); Serial.println(" Co");
-    Serial.print(Gas); Serial.println(" Gas");
-    Serial.println("===========================================");
+  // Read DHT22
+  float T_inC, H_inPer, Gas, Co;
+  T_inC = dht.readTemperature();
+  H_inPer = dht.readHumidity();
 
-    lcd.clear();  
-    lcd.setCursor(0,0);   //Set cursor to character 0 on line 0
-    lcd.print(String(T_inC));
-    lcd.print((char)223); // this is for celcius symbol
-    lcd.print("C");
-    lcd.setCursor(8,0);
-    lcd.print(String(H_inPer));
-    lcd.print("%");
-    lcd.setCursor(0,1);   //Set cursor to character 0 on line 1
-    lcd.print(String(Gas));
-    lcd.print("G ");
-    lcd.setCursor(8,1); 
-    lcd.print(String(Co));
-    lcd.print("Co");
-    
-    client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
-    client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
+  Co = analogReadMQ7(); // Read Analog value of the first sensor
+  Gas = analogReadMQ135(); // Read Analog value of the second sensor
 
-    client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
-    client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
- 
+  Serial.print(T_inC);
+  Serial.println(" C");
+  Serial.print(H_inPer);
+  Serial.println(" P");
+  Serial.print(Co);
+  Serial.println(" Co");
+  Serial.print(Gas);
+  Serial.println(" Gas");
+  Serial.println("===========================================");
+
+  // Display the data on the LCD using the displayOnLCD function
+  displayOnLCD(String(T_inC) + (char)223 + "C"+" "+ String(H_inPer) + "%", String(Gas) + "G" +" "+ String(Co) + "Co");
+
+  // Publish data to MQTT
+  client.publish("master/quy_esp/writeattributevalue/MQ135/65VFyoeH9DRpTsLZxtdvkQ", String(Gas).c_str());
+  client.publish("master/quy_esp/writeattributevalue/MQ7/65VFyoeH9DRpTsLZxtdvkQ", String(Co).c_str());
+  client.publish("master/quy_esp/writeattributevalue/temperature/65VFyoeH9DRpTsLZxtdvkQ", String(T_inC).c_str());
+  client.publish("master/quy_esp/writeattributevalue/relativeHumidity/65VFyoeH9DRpTsLZxtdvkQ", String(H_inPer).c_str());
 }
 
- 

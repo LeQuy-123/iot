@@ -3,7 +3,7 @@ const char* ssid = "xxxxxxxxxx"; // Wifi SSID
 const char* password = "xxxxxxxxxx"; // Wifi Password
 
 //MQTT Broker
-const char* mqtt_server = "192.168.1.2";
+const char* mqtt_server = "192.168.2.106";
 unsigned int mqtt_port = 1883; //SSL 8883 NoneSSL 1883
 const char* username = "master:quy"; // Service User Realm:Serviceuser
 const char* mqttpass = "JdH6fLtpmYCj62XAHbUfdxeaAgl9tjyX"; // Service User Secret
