@@ -122,9 +122,6 @@ void setup()
   displayOnLCD("IP: ", WiFi.localIP().toString());
   
   server.begin();
-
-  // reconnect();
-  // publicData();
 }
 int analogReadMQ7() {
     delay(100);

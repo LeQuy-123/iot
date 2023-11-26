@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CustomDateTimePicker extends StatefulWidget {
-  final Function(dynamic x) onSelectTimeRange;
+  final Function(dynamic x, String type) onSelectTimeRange;
   const CustomDateTimePicker({super.key, required this.onSelectTimeRange});
 
   @override
@@ -27,14 +27,7 @@ class CustomDateTimePickerState extends State<CustomDateTimePicker> {
               value: 'Last Date',
               child: Text('Last Date'),
             ),
-            DropdownMenuItem<String>(
-              value: 'Last Week',
-              child: Text('Last Week'),
-            ),
-            DropdownMenuItem<String>(
-              value: 'Last Month',
-              child: Text('Last Month'),
-            ),
+            
           ],
           onChanged: (String? newValue) {
             setState(() {
@@ -49,47 +42,24 @@ class CustomDateTimePickerState extends State<CustomDateTimePicker> {
 
   void _handleOptionSelection(String option) {
     switch (option) {
-      
       case 'Last Hour':
         _pickLastHour();
         break;
       case 'Last Date':
         _pickLastDate();
         break;
-      case 'Last Week':
-        _pickLastWeek();
-        break;
-      case 'Last Month':
-        _pickLastMonth();
-        break;
+ 
     }
   }
 
   void _pickLastHour() {
-    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(hours: 1)));
-    setState(() {
-      selectedDateTime = DateTime.now().subtract(const Duration(hours: 1));
-    });
+    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(hours: 1)), 'H');
+   
   }
 
   void _pickLastDate() {
-    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(days: 1)));
-    setState(() {
-      selectedDateTime = DateTime.now().subtract(const Duration(days: 1));
-    });
+    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(days: 1)), 'D');
+   
   }
-
-  void _pickLastWeek() {
-    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(days: 7)));
-    setState(() {
-      selectedDateTime = DateTime.now().subtract(const Duration(days: 7));
-    });
-  }
-
-  void _pickLastMonth() {
-    widget.onSelectTimeRange(DateTime.now().subtract(const Duration(days: 7)));
-    setState(() {
-      selectedDateTime = DateTime.now().subtract(const Duration(days: 30));
-    });
-  }
+ 
 }

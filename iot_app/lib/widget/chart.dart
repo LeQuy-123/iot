@@ -16,12 +16,12 @@ class LineChartSample10 extends StatefulWidget {
       required this.selectedDateTime,
       required this.selectedAssetId,
       required this.ipAddress,
-      required this.temperature});
-  final DateTime? selectedDateTime; 
-  final String selectedAssetId; 
+      required this.temperature, required this.selectedDateTimeType});
+  final DateTime? selectedDateTime;
+  final String selectedAssetId;
   final String ipAddress;
   final String temperature;
-
+  final String? selectedDateTimeType;
   final Color sinColor = Colors.redAccent;
   final Color cosColor = Colors.blueAccent;
 
@@ -38,7 +38,6 @@ class _LineChartSample10State extends State<LineChartSample10> {
   double step = 0.05;
 
   late Timer timer;
-  double interval = 60000;
   @override
   void didUpdateWidget(covariant LineChartSample10 oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -49,53 +48,23 @@ class _LineChartSample10State extends State<LineChartSample10> {
       // Call your function here
       onDataChanged();
     }
-     // Check if selectedDateTime or selectedAssetId has changed
+    // Check if selectedDateTime or selectedAssetId has changed
     onTempChanged();
-
   }
 
   // Function to be called when selectedDateTime or selectedAssetId changes
   void onDataChanged() {
     Log.print(
         'Data changed: ${widget.selectedDateTime}, ${widget.selectedAssetId}');
-    if(widget.selectedDateTime != null) {
-      fetchData(widget.selectedAssetId, widget.selectedDateTime ?? DateTime.now());
+    if (widget.selectedDateTime != null) {
+      fetchData(
+          widget.selectedAssetId, widget.selectedDateTime ?? DateTime.now());
       // Check if selectedDateTime is in the last hour
-      if (widget.selectedDateTime!.isAfter(DateTime.now().subtract(const Duration(hours: 1)))) {
-        setState(() {
-          interval =  60000;
-        });
-      }
-
-      if (widget.selectedDateTime!.day == DateTime.now().day &&
-          widget.selectedDateTime!.month == DateTime.now().month &&
-          widget.selectedDateTime!.year == DateTime.now().year) {
-        setState(() {
-          interval = 60000 * 60;
-        });
-      }
-
-      // Check if selectedDateTime is in the last week
-      if (widget.selectedDateTime!.isAfter(DateTime.now().subtract(const Duration(days: 7)))) {
-        setState(() {
-          interval = 60000 * 60 *24;
-        });
-      }
-
-      // Check if selectedDateTime is in the last month
-      if (widget.selectedDateTime!.month ==
-              DateTime.now().subtract(const Duration(days: 30)).month &&
-          widget.selectedDateTime!.year ==
-              DateTime.now().subtract(const Duration(days: 30)).year) {
-        setState(() {
-          interval = 60000 * 60 * 24 * 7;
-        });
-      }
     }
   }
+
   void onTempChanged() {
-    Log.print(
-        'onTempChanged changed: ${widget.temperature}');
+    Log.print('onTempChanged changed: ${widget.temperature}');
     // while (lineFl.length > limitCount) {
     //   lineFl.removeAt(0);
     // }
@@ -104,14 +73,23 @@ class _LineChartSample10State extends State<LineChartSample10> {
     // });
     // xValue += step;
   }
+
   Future<void> fetchData(String attributeId, DateTime fromTimestamp) async {
     final String apiUrl =
         'https://${widget.ipAddress}/api/master/asset/datapoint/$attributeId/attribute/temperature';
+    String interval = '';
+    if (widget.selectedDateTimeType == 'H') {
+      interval = '15 MINUTE';
+    } else if (widget.selectedDateTimeType == 'D') {
+      interval = '1 HOUR';
+    }  
     final Map<String, dynamic> requestBody = {
-      "type": "lttb",
+      "type": "interval",
       "fromTimestamp": fromTimestamp.millisecondsSinceEpoch,
       "toTimestamp": DateTime.now().millisecondsSinceEpoch,
-      "amountOfPoints": 30,
+      "interval": interval,
+      "gapFill": false,
+      "formula": "AVG",
     };
     // Encode the request body to JSON
     final String requestBodyJson = json.encode(requestBody);
@@ -132,8 +110,9 @@ class _LineChartSample10State extends State<LineChartSample10> {
         final List<dynamic> responseData = json.decode(response.body);
         List<DataPoint> dataPoints =
             responseData.map((json) => DataPoint.fromJson(json)).toList();
+        dataPoints.sort((a, b) => a.x.compareTo(b.x));
         final List<FlSpot> lf = dataPoints.map((dataPoint) {
-          return FlSpot(dataPoint.x - dataPoints.first.x, dataPoint.y);
+          return FlSpot(dataPoint.x, dataPoint.y);
         }).toList();
         setState(() {
           listData = dataPoints;
@@ -148,6 +127,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
       Log.print('Error: $error');
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return lineFl.isNotEmpty
@@ -157,112 +137,120 @@ class _LineChartSample10State extends State<LineChartSample10> {
               const SizedBox(height: 12),
               AspectRatio(
                 aspectRatio: 1.5,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return LineChart(
-                      LineChartData(
-                        minY: 0,
-                        maxY: 50,
-                        minX: 0,
-                        maxX: listData.last.x -  listData.first.x,
-                        lineTouchData: const LineTouchData(enabled: false),
-                        clipData: const FlClipData.all(),
-                        gridData: const FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          drawHorizontalLine: true,
-                        ),
-                        borderData: FlBorderData(show: true),
-                        lineBarsData: [
-                          sinLine(lineFl),
-                        ],
-                        
-                        titlesData: FlTitlesData( 
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) =>
-                                  bottomTitleWidgets(
-                                      value, meta, constraints.maxWidth),
-                              interval: interval,
-                            ),
-                            drawBelowEverything: true,
-                          ),
-                          rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                            )),
-                          topTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                              showTitles: false,
-                            )),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (value, meta) =>
-                                  leftTitleWidgets(
-                                      value, meta, constraints.maxWidth),
-                              reservedSize: 56,
-                            ),
-                            drawBelowEverything: true,
-                          ),
-                          
-                        )
-                        
-                      ),
-                    );
-                  }
-                ),
+                child: ChartData(
+                    listData: listData, lineFl: lineFl, interval: widget.selectedDateTimeType),
               )
             ],
           )
         : Container();
   }
 
-  LineChartBarData sinLine(List<FlSpot> points) {
-    return LineChartBarData(
-      spots: points,
-      dotData: const FlDotData(
-        show: false,
-      ),
-      isCurved: true,
-      isStrokeCapRound: true,
-      barWidth: 2,
-    );
-  }
-
-   Widget bottomTitleWidgets(double value, TitleMeta meta, double chartWidth) {
-    if (value % 1 != 0) {
-      return Container();
-    }
-    final style = TextStyle(
-      color: Colors.blueAccent,
-      fontSize: min(11, 11 * chartWidth / 300),
-    );
-    DateTime dateTime = DateTime.fromMillisecondsSinceEpoch((value + listData.first.x).toInt());
-    String formattedTime = DateFormat.Hm().format(dateTime);
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 5,
-      child: Text(formattedTime, style: style),
-    );
-  }
-
-  Widget leftTitleWidgets(double value, TitleMeta meta, double chartWidth) {
-    final style = TextStyle(
-      color: Colors.blueAccent,
-      fontSize: min(10, 10 * chartWidth / 300),
-    );
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 16,
-      child: Text('${meta.formattedValue}\u2103', style: style),
-    );
-  }
-
   @override
   void dispose() {
     timer.cancel();
     super.dispose();
+  }
+}
+
+class ChartData extends StatelessWidget {
+  const ChartData({
+    super.key,
+    required this.listData,
+    required this.lineFl,
+    required this.interval,
+  });
+
+  final List<DataPoint> listData;
+  final List<FlSpot> lineFl;
+  final String? interval;
+
+  @override
+  Widget build(BuildContext context) {
+    double it = 60000;
+    Log.print('inter val -> $interval');
+    if (interval == 'H') {
+      it = 60000 * 10;
+    } else if (interval == 'D') {
+      it = 60000 * 60 * 4;
+    }  
+    return LayoutBuilder(builder: (context, constraints) {
+      return LineChart(
+        LineChartData(
+            minY: 20,
+            maxY: 40,
+            // minX: listData.first.x,
+            // maxX: listData.last.x,
+            lineTouchData: const LineTouchData(enabled: false),
+            clipData: const FlClipData.all(),
+            gridData: const FlGridData(
+              show: true,
+              drawVerticalLine: true,
+              drawHorizontalLine: true,
+            ),
+            borderData: FlBorderData(show: true),
+            lineBarsData: [
+              LineChartBarData(
+                spots: lineFl,
+                dotData: const FlDotData(
+                  show: false,
+                ),
+                isCurved: true,
+                isStrokeCapRound: true,
+                barWidth: 2,
+              )
+            ],
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    if (value % 1 != 0 ||
+                        value == meta.max ||
+                        value == meta.min) {
+                      return Container();
+                    }
+                    final style = TextStyle(
+                      color: Colors.blueAccent,
+                      fontSize: min(11, 11 * constraints.maxWidth / 300),
+                    );
+                    DateTime dateTime =
+                        DateTime.fromMillisecondsSinceEpoch((value).toInt());
+                    String formattedTime = DateFormat.Hm().format(dateTime);
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      space: 5,
+                      child: Text(formattedTime, style: style),
+                    );
+                  },
+                  interval: it,
+                ),
+                drawBelowEverything: true,
+              ),
+              rightTitles: const AxisTitles(sideTitles: SideTitles()),
+              topTitles: const AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: false,
+              )),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    final style = TextStyle(
+                      color: Colors.blueAccent,
+                      fontSize: min(10, 10 * constraints.maxWidth / 300),
+                    );
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      space: 16,
+                      child: Text('${meta.formattedValue}\u2103', style: style),
+                    );
+                  },
+                  reservedSize: 56,
+                ),
+                drawBelowEverything: true,
+              ),
+            )),
+      );
+    });
   }
 }

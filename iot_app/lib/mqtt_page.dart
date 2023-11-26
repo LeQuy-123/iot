@@ -29,6 +29,8 @@ class MqttPageState extends State<MqttPage> {
   WeatherInfoToday? weatherData;
 
   DateTime? selectedDateTime;
+  String? selectedDateTimeType = '';
+
   String selectedAssetId = '';
 
   List<Asset> listAsset = [];
@@ -259,9 +261,10 @@ class MqttPageState extends State<MqttPage> {
                                           selectedAssetId = id;
                                         });
                                       }),
-                                  CustomDateTimePicker(onSelectTimeRange: (x) {
+                                  CustomDateTimePicker(onSelectTimeRange: (x, type) {
                                     setState(() {
                                       selectedDateTime = x;
+                                      selectedDateTimeType = type;
                                     });
                                   }),
                                 ],
@@ -274,6 +277,7 @@ class MqttPageState extends State<MqttPage> {
                                 selectedDateTime: selectedDateTime,
                                 selectedAssetId: selectedAssetId,
                                 temperature: temperature,
+                                selectedDateTimeType: selectedDateTimeType,
                                 ipAddress: ipAddressController.text
                               ),
                             )
