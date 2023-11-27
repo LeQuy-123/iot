@@ -13,10 +13,11 @@ class AssetListSelectWidget extends StatefulWidget {
 
 class AssetListSelectWidgetState extends State<AssetListSelectWidget> {
   Asset? selectedAsset;
-  DateTime selectedDateTime = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
+    List<Asset> listAsset = widget.assets;
+
     return DropdownButton<Asset>(
       value: selectedAsset,
       onChanged: (Asset? newValue) {
@@ -30,7 +31,7 @@ class AssetListSelectWidgetState extends State<AssetListSelectWidget> {
           Log.print('Selected Asset: ${newValue.id}');
         }
       },
-      items: widget.assets.map((Asset asset) {
+      items: listAsset.map((Asset asset) {
         return DropdownMenuItem<Asset>(
           value: asset,
           child: Text(asset.name),

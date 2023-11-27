@@ -9,7 +9,7 @@ class CustomDateTimePicker extends StatefulWidget {
 }
 
 class CustomDateTimePickerState extends State<CustomDateTimePicker> {
-  DateTime selectedDateTime = DateTime.now();
+  DateTime? selectedDateTime;
   String? selectedOption;
 
   @override

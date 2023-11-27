@@ -68,17 +68,19 @@ class MqttPageState extends State<MqttPage> {
         final String message =
             MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
         final jsonMessage = json.decode(message);
-
-        if (jsonMessage["attributeState"]["ref"]["name"] == "temperature") {
+        if(jsonMessage["attributeState"]["ref"]["id"] == "65VFyoeH9DRpTsLZxtdvkQ") {
+          if (jsonMessage["attributeState"]["ref"]["name"] == "temperature") {
           setState(() {
             temperature = jsonMessage["attributeState"]["value"].toString();
           });
         }
-        if (jsonMessage["attributeState"]["ref"]["name"] == "humidity") {
+        if (jsonMessage["attributeState"]["ref"]["name"] == "relativeHumidity") {
           setState(() {
             humidity = jsonMessage["attributeState"]["value"].toString();
           });
         }
+        }
+        
       });
     } catch (e) {
       Fluttertoast.showToast(
@@ -135,8 +137,9 @@ class MqttPageState extends State<MqttPage> {
         List<dynamic> jsonList = json.decode(responseBody);
         List<Asset> assets =
             jsonList.map((json) => Asset.fromJson(json)).toList();
+        List<Asset> uniqueAssets = removeDuplicatesById(assets);
         setState(() {
-          listAsset = assets;
+          listAsset = uniqueAssets;
         });
         Log.print("Response: $responseBody");
       } else {
@@ -179,6 +182,7 @@ class MqttPageState extends State<MqttPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
                   controller: ipAddressController,
+                  keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     hintText: 'Enter IP Address (e.g., 0.0.0.0)',
                   ),
@@ -301,4 +305,17 @@ class MqttPageState extends State<MqttPage> {
     }
     super.dispose();
   }
+}
+List<Asset> removeDuplicatesById(List<Asset> inputList) {
+  Set<String> uniqueIds = {};
+  List<Asset> resultList = [];
+
+  for (var asset in inputList) {
+    if (uniqueIds.add(asset.id)) {
+      // If the id is added to the set, it means it's unique, so add the asset to the result list.
+      resultList.add(asset);
+    }
+  }
+
+  return resultList;
 }

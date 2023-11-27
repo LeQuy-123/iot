@@ -24,7 +24,9 @@ Future main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // ignore: unused_local_variable
   String? token = await FirebaseMessagingService().configure();
+  // await FirebaseMessagingService().subscribeToTopic('iot');
   await FirebaseMessagingService().subscribeToTopic('iot');
+
   HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }

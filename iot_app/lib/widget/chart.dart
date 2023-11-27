@@ -16,7 +16,8 @@ class LineChartSample10 extends StatefulWidget {
       required this.selectedDateTime,
       required this.selectedAssetId,
       required this.ipAddress,
-      required this.temperature, required this.selectedDateTimeType});
+      required this.temperature,
+      required this.selectedDateTimeType});
   final DateTime? selectedDateTime;
   final String selectedAssetId;
   final String ipAddress;
@@ -37,7 +38,6 @@ class _LineChartSample10State extends State<LineChartSample10> {
   double xValue = 0;
   double step = 0.05;
 
-  late Timer timer;
   @override
   void didUpdateWidget(covariant LineChartSample10 oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -49,7 +49,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
       onDataChanged();
     }
     // Check if selectedDateTime or selectedAssetId has changed
-    onTempChanged();
+    // onTempChanged();
   }
 
   // Function to be called when selectedDateTime or selectedAssetId changes
@@ -82,7 +82,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
       interval = '15 MINUTE';
     } else if (widget.selectedDateTimeType == 'D') {
       interval = '1 HOUR';
-    }  
+    }
     final Map<String, dynamic> requestBody = {
       "type": "interval",
       "fromTimestamp": fromTimestamp.millisecondsSinceEpoch,
@@ -132,24 +132,41 @@ class _LineChartSample10State extends State<LineChartSample10> {
   Widget build(BuildContext context) {
     return lineFl.isNotEmpty
         ? Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 12),
               AspectRatio(
                 aspectRatio: 1.5,
                 child: ChartData(
-                    listData: listData, lineFl: lineFl, interval: widget.selectedDateTimeType),
+                    listData: listData,
+                    lineFl: lineFl,
+                    interval: widget.selectedDateTimeType),
+              ),
+              Container(
+                margin: const EdgeInsets.fromLTRB(50, 15, 0, 0),
+                child: AverageValueWidget(
+                  temperature: calculateAverageY(listData).toStringAsFixed(2),
+                ),
               )
             ],
           )
         : Container();
   }
+}
 
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
+double calculateAverageY(List<DataPoint> data) {
+  if (data.isEmpty) {
+    return 0.0; // Return 0 if the list is empty to avoid division by zero
   }
+
+  double sumY = 0;
+
+  for (var dataPoint in data) {
+    sumY += dataPoint.y;
+  }
+
+  double averageY = sumY / data.length;
+  return averageY;
 }
 
 class ChartData extends StatelessWidget {
@@ -167,12 +184,11 @@ class ChartData extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double it = 60000;
-    Log.print('inter val -> $interval');
     if (interval == 'H') {
       it = 60000 * 10;
     } else if (interval == 'D') {
       it = 60000 * 60 * 4;
-    }  
+    }
     return LayoutBuilder(builder: (context, constraints) {
       return LineChart(
         LineChartData(
@@ -252,5 +268,44 @@ class ChartData extends StatelessWidget {
             )),
       );
     });
+  }
+}
+
+class AverageValueWidget extends StatelessWidget {
+  final String temperature;
+
+  const AverageValueWidget({Key? key, required this.temperature})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade200, Colors.blue.shade500],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Average Value:',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$temperature \u2103',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
