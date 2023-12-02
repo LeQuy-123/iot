@@ -1,29 +1,39 @@
-// server.js
-import http from 'http';
-import linearRegressionModel from './linearRegression.js'; // Adjust the path based on your file structure
-import { parse } from 'url';
+import express from 'express';
+import pkg from 'body-parser';
+import { SimpleLinearRegression } from 'ml-regression-simple-linear';
 
-const server = http.createServer((req, res) => {
-    const parsedUrl = parse(req.url, true); // Parse the URL to extract query parameters
+const app = express();
+const PORT = 3000;
+const { json, urlencoded } = pkg;
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
-    if (req.method === 'GET' && parsedUrl.pathname === '/predict') {
-        // Handle GET request for prediction
-        const timestamp = parseFloat(parsedUrl.query.timestamp);
+app.post('/predict', (req, res) => {
+    const timestamp = parseFloat(req.query.timestamp);
+
+    try {
+        const requestData = req.body;
+
         if (!isNaN(timestamp)) {
+            const timestamps = requestData.map(point => point.x);
+            const temperatures = requestData.map(point => point.y);
+            const linearRegressionModel = new SimpleLinearRegression(timestamps, temperatures);
+
             const prediction = linearRegressionModel.predict(timestamp);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ timestamp, prediction }));
+
+            res.status(200).json({ timestamp, prediction });
         } else {
-            res.writeHead(400, { 'Content-Type': 'text/plain' });
-            res.end('Invalid timestamp provided');
+            res.status(400).send('Invalid timestamp provided');
         }
-    } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
+    } catch (error) {
+        res.status(400).send('Invalid JSON payload');
     }
 });
 
-const PORT = 3000;
-server.listen(PORT, () => {
+app.use((req, res) => {
+    res.status(404).send('Not Found');
+});
+
+app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
