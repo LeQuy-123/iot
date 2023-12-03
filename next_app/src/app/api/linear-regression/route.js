@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { SimpleLinearRegression } from 'ml-regression-simple-linear';
 
-export async function  POST(request) {
+export async function POST(request) {
     try {
-        const { dataPoints } = await request.json();
-        const { timestamp } = request.query;
+
+        const dataPoints = await request.json();
+        const url = new URL(request.url);
+        const searchParams = new URLSearchParams(url.search);
+        const timestamp = searchParams.get('timestamp');
         const parsedTimestamp = parseFloat(timestamp);
-        console.log(dataPoints)
 
         // Assuming dataPoints is an array of [x, y] pairs
         const xValues = dataPoints.map(point => point.x);
@@ -23,9 +25,9 @@ export async function  POST(request) {
                 body: {
                     timestamp, prediction 
                 },
-                path: request.nextUrl.pathname,
-                query: request.nextUrl.search,
-                cookies: request.cookies.getAll(),
+                // path: request.nextUrl.pathname,
+                // query: request.nextUrl.search,
+                // cookies: request.cookies.getAll(),
             },
             {
                 status: 200,
