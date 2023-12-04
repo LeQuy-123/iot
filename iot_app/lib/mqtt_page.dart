@@ -274,17 +274,16 @@ class MqttPageState extends State<MqttPage> {
                                 ],
                               ),
                             ),
-                            if(selectedAssetId != '' && selectedDateTime != null)
                             Padding(
                               padding: const EdgeInsets.only(right: 30),
                               child: LineChartSample10(
-                                selectedDateTime: selectedDateTime,
-                                selectedAssetId: selectedAssetId,
-                                temperature: temperature,
-                                selectedDateTimeType: selectedDateTimeType,
-                                ipAddress: ipAddressController.text
-                              ),
+                                  selectedDateTime: selectedDateTime,
+                                  selectedAssetId: selectedAssetId,
+                                  temperature: temperature,
+                                  selectedDateTimeType: selectedDateTimeType,
+                                  ipAddress: ipAddressController.text),
                             )
+                           
                           ],
                         ),
                       ],

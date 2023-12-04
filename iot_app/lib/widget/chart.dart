@@ -41,27 +41,18 @@ class _LineChartSample10State extends State<LineChartSample10> {
   @override
   void didUpdateWidget(covariant LineChartSample10 oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     // Check if selectedDateTime or selectedAssetId has changed
     if (widget.selectedDateTime != oldWidget.selectedDateTime ||
         widget.selectedAssetId != oldWidget.selectedAssetId) {
       // Call your function here
-      onDataChanged();
+      fetchData(
+          widget.selectedAssetId, widget.selectedDateTime ?? DateTime.now());
     }
     // Check if selectedDateTime or selectedAssetId has changed
     // onTempChanged();
   }
 
-  // Function to be called when selectedDateTime or selectedAssetId changes
-  void onDataChanged() {
-    Log.print(
-        'Data changed: ${widget.selectedDateTime}, ${widget.selectedAssetId}');
-    if (widget.selectedDateTime != null) {
-      fetchData(
-          widget.selectedAssetId, widget.selectedDateTime ?? DateTime.now());
-      // Check if selectedDateTime is in the last hour
-    }
-  }
+ 
 
   void onTempChanged() {
     Log.print('onTempChanged changed: ${widget.temperature}');
@@ -79,7 +70,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
         'https://${widget.ipAddress}/api/master/asset/datapoint/$attributeId/attribute/temperature';
     String interval = '';
     if (widget.selectedDateTimeType == 'H') {
-      interval = '15 MINUTE';
+      interval = '5 MINUTE';
     } else if (widget.selectedDateTimeType == 'D') {
       interval = '1 HOUR';
     }

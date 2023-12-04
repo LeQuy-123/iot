@@ -18,7 +18,7 @@ export async function POST(request) {
         const linearRegressionModel = new SimpleLinearRegression(xValues, yValues);
         const predictList = [];
         for(var i = 0; i< 12; i++) {
-            const nextTimestamp = parsedTimestamp + i * 60 * 60 * 1000;
+            const nextTimestamp = parsedTimestamp + i * 5 * 60 * 1000;
             predictList.push({
                 timestamp: nextTimestamp,
                 prediction: linearRegressionModel.predict(nextTimestamp)
