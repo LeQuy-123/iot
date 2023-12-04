@@ -1,3 +1,4 @@
+
 class DataPoint {
   final double x;
   final double y;
@@ -9,8 +10,8 @@ class DataPoint {
 
   factory DataPoint.fromJson(Map<String, dynamic> json) {
     return DataPoint(
-      x: json['x'].toDouble(),
-      y: json['y'].toDouble(),
+      x: json['x'] != null ? json['x'].toDouble() : json['timestamp'].toDouble(),
+      y: json['y'] != null ? json['y'].toDouble() : json['prediction'].toDouble(),
     );
   }
 

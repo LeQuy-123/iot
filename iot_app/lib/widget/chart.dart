@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'package:iot_app/provider/token_provider.dart';
 import 'dart:math';
 
+import 'package:iot_app/widget/weather_info.dart';
+
 class LineChartSample10 extends StatefulWidget {
   const LineChartSample10(
       {super.key,
@@ -34,6 +36,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
   final limitCount = 100;
   List<DataPoint> listData = [];
   List<FlSpot> lineFl = <FlSpot>[];
+  List<dynamic> lineFlFuture = [];
 
   double xValue = 0;
   double step = 0.05;
@@ -52,22 +55,16 @@ class _LineChartSample10State extends State<LineChartSample10> {
     // onTempChanged();
   }
 
- 
-
   void onTempChanged() {
     Log.print('onTempChanged changed: ${widget.temperature}');
-    // while (lineFl.length > limitCount) {
-    //   lineFl.removeAt(0);
-    // }
-    // setState(() {
-    //   lineFl.add(FlSpot(xValue, double.parse(widget.temperature)));
-    // });
-    // xValue += step;
   }
 
   Future<void> fetchData(String attributeId, DateTime fromTimestamp) async {
+    String currentTime = DateTime.now().millisecondsSinceEpoch.toString();
     final String apiUrl =
         'https://${widget.ipAddress}/api/master/asset/datapoint/$attributeId/attribute/temperature';
+    final String apiPredict =
+        'https://iot-seven-olive.vercel.app/api/linear-regression?timestamp=$currentTime';
     String interval = '';
     if (widget.selectedDateTimeType == 'H') {
       interval = '5 MINUTE';
@@ -77,7 +74,7 @@ class _LineChartSample10State extends State<LineChartSample10> {
     final Map<String, dynamic> requestBody = {
       "type": "interval",
       "fromTimestamp": fromTimestamp.millisecondsSinceEpoch,
-      "toTimestamp": DateTime.now().millisecondsSinceEpoch,
+      "toTimestamp": currentTime,
       "interval": interval,
       "gapFill": false,
       "formula": "AVG",
@@ -96,18 +93,34 @@ class _LineChartSample10State extends State<LineChartSample10> {
         },
         body: requestBodyJson,
       );
+
       if (response.statusCode == 200) {
         // Parse the response body
         final List<dynamic> responseData = json.decode(response.body);
+
+        final http.Response futureRes = await http.post(
+          Uri.parse(apiPredict),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: response.body,
+        );
+        final Map<String, dynamic> futureResData = json.decode(futureRes.body);
         List<DataPoint> dataPoints =
             responseData.map((json) => DataPoint.fromJson(json)).toList();
         dataPoints.sort((a, b) => a.x.compareTo(b.x));
+
+        List<dynamic> dataPointsFuture = futureResData["body"]
+            .map((json) => DataPoint.fromJson(json))
+            .toList();
         final List<FlSpot> lf = dataPoints.map((dataPoint) {
           return FlSpot(dataPoint.x, dataPoint.y);
         }).toList();
+
         setState(() {
           listData = dataPoints;
           lineFl = lf;
+          lineFlFuture = dataPointsFuture;
         });
         // Handle the response data as needed
         Log.print('Response Data: $responseData');
@@ -121,27 +134,96 @@ class _LineChartSample10State extends State<LineChartSample10> {
 
   @override
   Widget build(BuildContext context) {
-    return lineFl.isNotEmpty
-        ? Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 12),
-              AspectRatio(
-                aspectRatio: 1.5,
-                child: ChartData(
-                    listData: listData,
-                    lineFl: lineFl,
-                    interval: widget.selectedDateTimeType),
+    if (lineFl.isNotEmpty) {
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(right: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1.7,
+                    child: ChartData(
+                        listData: listData,
+                        lineFl: lineFl,
+                        interval: widget.selectedDateTimeType),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(50, 15, 0, 0),
+                    child: AverageValueWidget(
+                      temperature: calculateAverageY(listData).toStringAsFixed(2),
+                    ),
+                  ),
+                  
+                ],
               ),
-              Container(
-                margin: const EdgeInsets.fromLTRB(50, 15, 0, 0),
-                child: AverageValueWidget(
-                  temperature: calculateAverageY(listData).toStringAsFixed(2),
-                ),
-              )
-            ],
-          )
-        : Container();
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              height: 65,
+              width: MediaQuery.of(context).size.width - 20,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: lineFlFuture.length,
+                itemBuilder: (context, index) {
+                  final weather = lineFlFuture[index];
+                  // Create a DateTime object from the timestamp
+                  DateTime dateTime =
+                      DateTime.fromMillisecondsSinceEpoch(weather.x.toInt());
+                  // Format the DateTime to a local time string
+                  return Container(
+                    // width: 70,
+                    margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment(0.09, -1.00),
+                        end: Alignment(-0.09, 1),
+                        colors: [Color(0xFF66E0D1), Color(0xFF579FF1)],
+                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(50)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 5,
+                          blurRadius: 7,
+                          offset:
+                              const Offset(0, 1), // changes position of shadow
+                        ),
+                      ],
+                    ),
+                    child: Column(children: [
+                      Text(
+                        formatterH.format(dateTime),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                        Text(
+                        '${weather.y.toStringAsFixed(2)} \u2103',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ]),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+      );
+    } else {
+      return Container();
+    }
   }
 }
 
