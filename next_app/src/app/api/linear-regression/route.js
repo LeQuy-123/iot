@@ -16,15 +16,19 @@ export async function POST(request) {
 
         // Create a simple linear regression model
         const linearRegressionModel = new SimpleLinearRegression(xValues, yValues);
-        
-        const prediction = linearRegressionModel.predict(parsedTimestamp);
+        const predictList = [];
+        for(var i = 0; i< 12; i++) {
+            const nextTimestamp = parsedTimestamp + i * 60 * 60 * 1000;
+            predictList.push({
+                timestamp: nextTimestamp,
+                prediction: linearRegressionModel.predict(nextTimestamp)
+            })
+        }
 
 
         return NextResponse.json(
             {
-                body: {
-                    timestamp, prediction 
-                },
+                body: predictList,
                 // path: request.nextUrl.pathname,
                 // query: request.nextUrl.search,
                 // cookies: request.cookies.getAll(),
